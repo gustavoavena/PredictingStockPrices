@@ -12,27 +12,10 @@ index_by_reference_price = {
 }
 
 
-def get_dataframe(f, y_index=1):
-	f.readline()
-
-	d = {'ds':[], 'y': []}
-
-
-	for line in f:
-		split = line.split(',')
-
-		d['ds'].append(split[0])
-		d['y'].append(split[y_index])
-		
-
-
-	return pd.Dataframe(df)
-
-
-
-def get_clean_dataframe(fname, reference_price='open'):
+def get_full_dataframe(fname, reference_price='open'):
+	
 	fpath = os.path.join('dataset/originals', fname)
-	output_path = os.path.join('dataset', fname.replace('.csv', '_clean.csv'))
+	# output_path = os.path.join('dataset', fname.replace('.csv', '_clean.csv'))
 
 	y_index = index_by_reference_price[reference_price]
 
@@ -40,18 +23,39 @@ def get_clean_dataframe(fname, reference_price='open'):
 
 	f.readline()
 
-	output = open(output_path, 'w')
 
-	output.write('ds,y\n')
+	d = {'ds':[], 'y': []}
+
 
 	for line in f:
 		split = line.split(',')
-
-		output.write("{},{}\n".format(split[0], split[y_index]))
-
-
-	output.close()
+		if(split[y_index] == 'null'):
+			continue
+		d['ds'].append(split[0])
+		d['y'].append(split[y_index])
+		
 	f.close()
+
+	return pd.DataFrame(d)
+
+
+
+
+def get_train_test_dataframe(fname, reference_price='open'):
+
+	df = get_full_dataframe(fname, reference_price)
+
+	rows = df.shape[0]
+
+	# print(rows)
+	train_cut = int(rows * 0.75)
+
+	
+
+
+	return df[:train_cut], df[train_cut:]
+
+	
 
 
 
@@ -63,7 +67,7 @@ def main():
 	else:
 		fname = 'PETR4.SA.csv'
 	
-	get_clean_dataframe(fname)
+	export_clean_dataset(fname, dataset='test')
 
 if __name__ == '__main__':
 	main()
