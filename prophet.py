@@ -1,4 +1,3 @@
-# Python
 import pandas as pd
 from fbprophet import Prophet, diagnostics
 from fbprophet.plot import plot_cross_validation_metric
@@ -10,6 +9,7 @@ from datetime import date
 import dataset_preparation
 
 DPI = 150
+RESOLUTION = (3840, 2160)
 
 
 def get_dataset_duration(df):
@@ -26,19 +26,16 @@ def get_dataset_duration(df):
 
 
 def fit_model_with_prophet(df, fname, future_period=730):
+	output_path = 'output/prophet'
+	
 	print(df.head())
 	print(df.tail())
-	
-
 
 	m = Prophet()
 	m.fit(df)
 
-
 	future = m.make_future_dataframe(periods=future_period)
 	print(future.tail())
-
-
 
 	forecast = m.predict(future)
 	print(forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail())
@@ -46,8 +43,12 @@ def fit_model_with_prophet(df, fname, future_period=730):
 	fig1 = m.plot(forecast)
 	fig1.suptitle('{} prediction model'.format(fname))
 	
-	fig1.figsize = (1920/DPI, 1080/DPI)
-	fig1.savefig('Figure_111.png', dpi=DPI)
+	fig1.figsize = (RESOLUTION[0]/DPI, RESOLUTION[1]/DPI)
+	
+	figure_path = os.path.join(output_path, fname.replace('.csv', '_model.png'))
+	fig1.savefig(figure_path, dpi=DPI)
+
+
 	# plt.show(fig1)
 
 
@@ -90,7 +91,7 @@ def prophet_cross_validation(df, fname, initial_ratio=0.6, period_ratio=0.05, ho
 
 	fig1 = plot_cross_validation_metric(df_cv, metric='mape', rolling_window=rolling_window)
 	fig1.suptitle('{} cross_validation MAPE'.format(fname))
-	fig1.figsize = (1920/DPI, 1080/DPI)
+	fig1.figsize = (RESOLUTION[0]/DPI, RESOLUTION[1]/DPI)
 
 	# saving files...
 	suffix = '_{}_{}_{}'.format(initial_ratio, period_ratio, horizon_ratio)
@@ -113,17 +114,18 @@ def prophet_cross_validation(df, fname, initial_ratio=0.6, period_ratio=0.05, ho
 
 def main():
 
-	if(len(sys.argv) > 1):
-		fname = sys.argv[1]
-		print("Testing prophet with file: {}".format(fname))
-	else:
-		fname = 'PETR4.SA.csv'
+	if(len(sys.argv) < 2):
+		print("Please provide a csv file with data...")
 
-	full_df = dataset_preparation.get_full_dataframe(fname)
-	# train_df, test_df = dataset_preparation.get_train_test_dataframe(fname)
+		
+	
+	for fname in sys.argv[1:]:
+		print("Processing file: ", fname)
+		full_df = dataset_preparation.get_full_dataframe(fname)
+		# train_df, test_df = dataset_preparation.get_train_test_dataframe(fname)
 
-	# fit_model_with_prophet(full_df, fname)
-	prophet_cross_validation(full_df, fname)
+		fit_model_with_prophet(full_df, fname)
+		# prophet_cross_validation(full_df, fname)
 
 
 
