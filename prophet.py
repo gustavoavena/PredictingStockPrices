@@ -25,6 +25,22 @@ def get_dataset_duration(df):
 
 
 def fit_model_with_prophet(df, fname, future_period=730):
+	"""
+	This function is much simpler than the cross validation function below.
+	It simply fits a model using the entire training dataset and performs predictions on the entire dataset using the calculated parameters.
+	Afterwards, it plots a graph of these values with predictions for a determined range in the future, so the model can be analyzed.
+
+	If future_period is greater than 0, the graph will also display predictions for the number of days defined in this parameter.
+
+	On the graph, the black points represent the actual values in the dataset(y), the blue line represents the predictions (yhat) and the blue shade surrounding
+	the line represents the range of maximum and minimum value predicted by the model.
+
+
+	:param df: dataset in a Pandas dataframe.
+	:param fname: original filename to determine the output file names.
+	:param future_period: the number of days in the future to run predictions using the trained model.
+	:return:
+	"""
 	output_path = 'output/prophet'
 	
 	print(df.head())
@@ -33,11 +49,14 @@ def fit_model_with_prophet(df, fname, future_period=730):
 	m = Prophet()
 	m.fit(df)
 
+	# creates a dataframe to be used for prediction (including the rows in the future period)
 	future = m.make_future_dataframe(periods=future_period)
 	print(future.tail())
 
+
 	forecast = m.predict(future)
 	print(forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail())
+
 
 	fig1 = m.plot(forecast)
 	fig1.suptitle('{} prediction model'.format(fname))
