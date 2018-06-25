@@ -1,5 +1,21 @@
 #!/usr/local/bin/python3
 
+
+"""
+Predicting stock prices with Facebook's Prophet tool.
+Gustavo Galvao Avena - RA:146346
+
+Given a csv file containing daily stock prices, this script will fit a model using Facebook's Prophet framework and will attempt to
+predict the stock prices for a given time range in the future.
+
+It also performs cross validation on the model (with parameters defined by the user) and exports csv files and graphs with the calculated metrics.
+
+The datasets used in the development were all obtained from the Yahoo! Finance website. The csv files must be in a directory called 'dataset/originals'.
+
+
+
+"""
+
 import pandas as pd
 from fbprophet import Prophet, diagnostics
 from fbprophet.plot import plot_cross_validation_metric
@@ -15,6 +31,12 @@ RESOLUTION = (3840, 2160)
 
 
 def get_dataset_duration(df):
+	"""
+	Returns the distance (in days) between the first and last dates in the provided dataset.
+
+	:param df: the dataset in a pandas dataframe format.
+	:return: distance between the first and last date, in days.
+	"""
 	first = [int(d) for d in df.iloc[0]['ds'].split('-')]
 	last = [int(d) for d in df.iloc[-1]['ds'].split('-')]
 
@@ -69,7 +91,7 @@ def fit_model_with_prophet(df, fname, future_period=730):
 	# plt.show(fig1)
 
 
-def prophet_cross_validation(df, fname, initial_ratio=0.6, period_ratio=0.05, horizon_ratio=0.1, rolling_window=0.1):
+def prophet_cross_validation(df, fname, initial_ratio=0.6, period_ratio=0.05, horizon_ratio=0.1, rolling_window=0.1, error_metric='rmse'):
 	"""
 
 	This function performs cross validation with the provided dataset and outputs all metrics and a graph, so the performance can be analyzed.
@@ -104,6 +126,7 @@ def prophet_cross_validation(df, fname, initial_ratio=0.6, period_ratio=0.05, ho
 	:param period_ratio: the ratio of days that will be skipped between each cross validation iteration.
 	:param horizon_ratio: the ratio of days that will be used as horizon between each cross validation iteration.
 	:param rolling_window: the ratio of days that will be used to calculate the errors (using rolling means) in the performance_metrics function.
+	:param error_metric: string representing the error metric to be plotted and saved to a file.
 	:return:
 	"""
 	output_path = 'output/prophet'
@@ -131,7 +154,7 @@ def prophet_cross_validation(df, fname, initial_ratio=0.6, period_ratio=0.05, ho
 	df_p = diagnostics.performance_metrics(df_cv, rolling_window=rolling_window)
 	print(df_p)
 
-	fig1 = plot_cross_validation_metric(df_cv, metric='mape', rolling_window=rolling_window)
+	fig1 = plot_cross_validation_metric(df_cv, metric=error_metric, rolling_window=rolling_window)
 	fig1.suptitle('{} cross_validation MAPE'.format(fname))
 	fig1.figsize = (RESOLUTION[0]/DPI, RESOLUTION[1]/DPI)
 
@@ -147,7 +170,7 @@ def prophet_cross_validation(df, fname, initial_ratio=0.6, period_ratio=0.05, ho
 
 	df_p.to_csv(os.path.join(output_folder, fname.replace('.csv', suffix + '_performance_metrics.csv')))
 
-	figure_output = os.path.join(output_folder, fname.replace('.csv', suffix + '_mape.png'))
+	figure_output = os.path.join(output_folder, fname.replace('.csv', suffix + '_{}.png'.format(error_metric)))
 	fig1.savefig(figure_output, dpi=DPI)
 
 	# plt.show(fig1)
@@ -155,6 +178,13 @@ def prophet_cross_validation(df, fname, initial_ratio=0.6, period_ratio=0.05, ho
 
 
 def main():
+	"""
+	Usage: python3 prophet.py [filename] {optional: filenames separated by spaces}
+
+	The file must be located in a folder called 'dataset/originals' and must be in csv format.
+
+	:return:
+	"""
 	if(len(sys.argv) < 2):
 		print("Please provide a csv file with data...")
 
@@ -163,8 +193,8 @@ def main():
 		full_df = dataset_preparation.get_full_dataframe(fname)
 		# train_df, test_df = dataset_preparation.get_train_test_dataframe(fname)
 
-		fit_model_with_prophet(full_df, fname)
-		# prophet_cross_validation(full_df, fname)
+		# fit_model_with_prophet(full_df, fname)
+		prophet_cross_validation(full_df, fname)
 
 
 if __name__ == '__main__':
