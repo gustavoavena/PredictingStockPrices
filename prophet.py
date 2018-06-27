@@ -80,13 +80,21 @@ def fit_model_with_prophet(df, fname, future_period=730):
 	print(forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail())
 
 
+	# model graph
 	fig1 = m.plot(forecast)
 	fig1.suptitle('{} prediction model'.format(fname))
-	
 	fig1.figsize = (RESOLUTION[0]/DPI, RESOLUTION[1]/DPI)
-	
-	figure_path = os.path.join(output_path, fname.replace('.csv', '_model.png'))
-	fig1.savefig(figure_path, dpi=DPI)
+	figure1_path = os.path.join(output_path, fname.replace('.csv', '_model.png'))
+	fig1.savefig(figure1_path, dpi=DPI)
+
+	# model components graphs
+	figure2_path = os.path.join(output_path, fname.replace('.csv', '_model_components.png'))
+	fig2 = m.plot_components(forecast)
+	fig2.suptitle('{} prediction model components'.format(fname))
+	fig2.figsize = (RESOLUTION[0] / DPI, RESOLUTION[1] / DPI)
+	fig2.savefig(figure2_path, dpi=DPI)
+
+
 
 	# plt.show(fig1)
 
@@ -155,7 +163,7 @@ def prophet_cross_validation(df, fname, initial_ratio=0.6, period_ratio=0.05, ho
 	print(df_p)
 
 	fig1 = plot_cross_validation_metric(df_cv, metric=error_metric, rolling_window=rolling_window)
-	fig1.suptitle('{} cross_validation MAPE'.format(fname))
+	fig1.suptitle('{} cross_validation {}'.format(fname, error_metric))
 	fig1.figsize = (RESOLUTION[0]/DPI, RESOLUTION[1]/DPI)
 
 	# saving files
@@ -193,8 +201,9 @@ def main():
 		full_df = dataset_preparation.get_full_dataframe(fname)
 		# train_df, test_df = dataset_preparation.get_train_test_dataframe(fname)
 
-		# fit_model_with_prophet(full_df, fname)
-		prophet_cross_validation(full_df, fname)
+		fit_model_with_prophet(full_df, fname)
+		prophet_cross_validation(full_df, fname, error_metric='rmse')
+		prophet_cross_validation(full_df, fname, error_metric='mape')
 
 
 if __name__ == '__main__':
